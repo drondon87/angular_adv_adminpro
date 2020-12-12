@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, Validators } from '@angular/forms';
 import { UsuarioService } from '../../services/usuario.service';
@@ -23,7 +23,8 @@ export class LoginComponent implements OnInit{
 
   constructor(private router: Router,
               private fb: FormBuilder,
-              private _usuarioService: UsuarioService) { }
+              private _usuarioService: UsuarioService,
+              private ngZone: NgZone) { }
 
   ngOnInit(){
     this.renderButton();
@@ -65,15 +66,10 @@ export class LoginComponent implements OnInit{
     this.startApp();
   }
 
-  startApp() {
-    gapi.load('auth2', () =>{
-      // Retrieve the singleton for the GoogleAuth library and set up the client.
-      this.auth2 = gapi.auth2.init({
-        client_id: '154133610773-42engbr2br7jfdek9d1v0rumbhkmsdht.apps.googleusercontent.com',
-        cookiepolicy: 'single_host_origin'
-      });
+  async startApp() {
+      await this._usuarioService.googleInit();
+      this.auth2 = this._usuarioService.auth2;
       this.attachSignin(document.getElementById('my-signin2'));
-    });
   };
 
   attachSignin(element) {
@@ -82,7 +78,9 @@ export class LoginComponent implements OnInit{
         (googleUser) => {
           const id_token = googleUser.getAuthResponse().id_token;
           this._usuarioService.loginGoogle(id_token).subscribe();
-          this.router.navigateByUrl('/');
+          this.ngZone.run(()=>{
+            this.router.navigateByUrl('/');
+          })
         }, (error) => {
           console.log(error);
           alert(JSON.stringify(error, undefined, 2));
