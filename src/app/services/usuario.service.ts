@@ -6,6 +6,7 @@ import { Observable, of } from 'rxjs';
 import { tap, map, catchError } from 'rxjs/operators';
 import { LoginForm } from '../interfaces/login-form.interface';
 import { Router } from '@angular/router';
+import { Usuario } from '../models/usuario.model';
 
 const BASE_URL = environment.base_url;
 declare const gapi: any;
@@ -16,6 +17,7 @@ declare const gapi: any;
 export class UsuarioService {
 
   public auth2: any;
+  public usuario: Usuario;
 
   constructor(private _http: HttpClient,
               private router: Router,
@@ -23,8 +25,17 @@ export class UsuarioService {
     this.googleInit();
   }
 
+  get token(): string{
+    return localStorage.getItem('token') || '';
+  }
+
+  get uid(): string {
+    return this.usuario.uid || '';
+  }
+
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('email');
     this.auth2.signOut().then(() => {
       this.ngZone.run(()=>{
         this.router.navigateByUrl('/login');
@@ -33,16 +44,17 @@ export class UsuarioService {
   }
 
   validarToken(): Observable<boolean> {
-    const token = localStorage.getItem('token') || '';
     return this._http.get(`${BASE_URL}/login/renew`,{
       headers: {
-        'x-token': token
+        'x-token': this.token
       }
     }).pipe(
-      tap((resp: any) =>{
+      map((resp: any) =>{
+        const { nombre, email,img = '', google, role, udi} = resp.usuario;
+        this.usuario = new Usuario(nombre, email, '',google, img, role, udi );
         localStorage.setItem('token',resp.token);
+        return true;
       }),
-      map( resp => true),
       catchError(err => of(false))
     )
   }
@@ -55,6 +67,18 @@ export class UsuarioService {
                   })
                 );
                 }
+
+  actualizarPerfil(data: {email: string, nombre: string, role: string}){
+    data = {
+      ...data, 
+      role: this.usuario.role
+    };
+    return this._http.put(`${BASE_URL}/usuarios/${this.uid}`, data, {
+      headers: {
+        'x-token': this.token
+      }
+    });
+  }
 
   login (formData: LoginForm): Observable<any> {
     return this._http.post(`${BASE_URL}/login`, formData)
