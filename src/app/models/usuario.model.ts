@@ -8,7 +8,7 @@ export class Usuario {
         public google?: boolean,
         public img?: string,
         public role?: string,
-        public uid?: string,
+        public uid?: string
     ){}
 
     get imagenUrl() {
