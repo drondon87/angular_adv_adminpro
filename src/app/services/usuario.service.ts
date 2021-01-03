@@ -42,9 +42,15 @@ export class UsuarioService {
     }
   }
 
+  get role(): 'ADMIN_ROLE' | 'USER_ROLE' {
+    return this.usuario.role;
+  }
+
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('email');
+    localStorage.removeItem('menu');
+    
     this.auth2.signOut().then(() => {
       this.ngZone.run(()=>{
         this.router.navigateByUrl('/login');
@@ -61,7 +67,7 @@ export class UsuarioService {
       map((resp: any) =>{
         const { nombre, email,img = '', google, role, uid} = resp.usuario;
         this.usuario = new Usuario(nombre, email, '',google, img, role, uid );
-        localStorage.setItem('token',resp.token);
+        this.asignarInfoLS(resp.token, resp.menu);
         return true;
       }),
       catchError(err => of(false))
@@ -71,9 +77,7 @@ export class UsuarioService {
   crearUsuario (formData: RegisterForm): Observable<any> {
     return this._http.post(`${BASE_URL}/usuarios`, formData)
                 .pipe(
-                  tap( (resp: any) =>{
-                    localStorage.setItem('token',resp.token);
-                  })
+                  tap( (resp: any) => this.asignarInfoLS(resp.token, resp.menu))
                 );
                 }
 
@@ -88,18 +92,14 @@ export class UsuarioService {
   login (formData: LoginForm): Observable<any> {
     return this._http.post(`${BASE_URL}/login`, formData)
           .pipe(
-            tap( (resp: any) =>{
-              localStorage.setItem('token',resp.token);
-            })
+            tap( (resp: any) => this.asignarInfoLS(resp.token, resp.menu) )
           );
   }
 
   loginGoogle (token: string): Observable<any> {
     return this._http.post(`${BASE_URL}/login/google`, {token})
           .pipe(
-            tap( (resp: any) =>{
-              localStorage.setItem('token',resp.token);
-            })
+            tap( (resp: any) => this.asignarInfoLS(resp.token, resp.menu) )
           );
   }
 
@@ -142,6 +142,11 @@ export class UsuarioService {
       email: usuario.email,
       role: usuario.role
       }, this.headers);
+  }
+
+  asignarInfoLS(token: string, menu: any){
+    localStorage.setItem('token',token);
+    localStorage.setItem('menu',JSON.stringify(menu));
   }
 
 

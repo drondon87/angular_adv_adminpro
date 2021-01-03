@@ -52,3 +52,7 @@
 .oculto {
     display: none;
 }
+
+.w75 {
+    width: 75px;
+}
