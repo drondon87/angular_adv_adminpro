@@ -34,14 +34,6 @@ export class UsuarioService {
     return this.usuario.uid || '';
   }
 
-  get headers() {
-    return  {
-      headers: {
-        'x-token': this.token
-      }
-    }
-  }
-
   get role(): 'ADMIN_ROLE' | 'USER_ROLE' {
     return this.usuario.role;
   }
@@ -59,11 +51,8 @@ export class UsuarioService {
   }
 
   validarToken(): Observable<boolean> {
-    return this._http.get(`${BASE_URL}/login/renew`,{
-      headers: {
-        'x-token': this.token
-      }
-    }).pipe(
+    return this._http.get(`${BASE_URL}/login/renew`)
+    .pipe(
       map((resp: any) =>{
         const { nombre, email,img = '', google, role, uid} = resp.usuario;
         this.usuario = new Usuario(nombre, email, '',google, img, role, uid );
@@ -86,7 +75,7 @@ export class UsuarioService {
       ...data, 
       role: this.usuario.role
     };
-    return this._http.put(`${BASE_URL}/usuarios/${this.uid}`, data, this.headers);
+    return this._http.put(`${BASE_URL}/usuarios/${this.uid}`, data);
   }
 
   login (formData: LoginForm): Observable<any> {
@@ -116,8 +105,9 @@ export class UsuarioService {
   }
 
   cargarUsuarios(desde: number = 0){
+    console.log('cargarUsuarios');
     const url = `${BASE_URL}/usuarios?desde=${desde}`; 
-    return this._http.get<CargarUsuario>(url, this.headers)
+    return this._http.get<CargarUsuario>(url)
         .pipe(
           map(resp =>{
             const usuarios = resp.usuarios.map( 
@@ -133,7 +123,7 @@ export class UsuarioService {
 
   eliminarUsuario(usuario: Usuario){
     const url = `${BASE_URL}/usuarios/${usuario.uid}`; 
-    return this._http.delete(url, this.headers);
+    return this._http.delete(url);
   }
 
   guardarusuario(usuario: Usuario){
@@ -141,7 +131,7 @@ export class UsuarioService {
       nombre: usuario.nombre,
       email: usuario.email,
       role: usuario.role
-      }, this.headers);
+      });
   }
 
   asignarInfoLS(token: string, menu: any){
